@@ -1,61 +1,75 @@
+import {React,  useState} from 'react';
 import { Field } from './components/Field/index';
-import { Formik } from 'formik';
-import * as Yup from 'yup';
+import { Formik, Form } from 'formik';
 import api from './services/api';
 
 export const App = () => {
+  const [list, setList] = useState([]);
+  const [isEdit, setIsEdit] = useState(false);
+  const [inputValue, setInputValue] = useState();
+  const [editPeople, setEditPeople] = useState();
 
-   function onSubmit(values, actions) {
-     api.post('/pessoas', values)
-         .then((response) => {
-            console.log("chegou aqui!")
-         })
- }
+  const deletar = async (pessoa) => {
+      await api.delete(`/pessoas/${pessoa.id}`)
+  }
 
-  const schema = Yup.object().shape({
-    nome: Yup.string().required(),
-    sobrenome: Yup.string().required(),
-    endereco: Yup.string().required(),
-    complemento: Yup.string().required(),
-    telefone: Yup.string().required(),
-})
+  const handleChange = (event) => {
+    setInputValue(event.target.value)
+  }
+
+  const handleEdit = (index) => {
+   const array = list[index]
+   setEditPeople({value:array, index})
+  
+
+   const newList = [...list]
+   newList[editPeople.index] = editPeople.value
+   setEditPeople(null)
+   setList(newList)
+    
+
+  }
+
   return (
     <div>
-      
-
       <Formik
-        onSubmit={onSubmit}
-        validationSchema={schema}
-        initialValues={{
-          nome: '',
-          sobrenome: '',
-          endereco: '',
-          no: '',
-          complemento: ''
-          
-        }}
-        render={({ values, isValid, setFieldValue, handleSubmit }) => (
-
-          <form onSubmit={handleSubmit}>
-            
-            <Field name="nome" type="text" label="Nome"/>
-            <Field name="sobrenome" type= "text" label="Sobrenome"/>
-            <Field name="endereco" label="Endereço" type="text" />
-            <Field name="no" label="Número" type="text" />
-            <Field name="complemento" label="Complemento" type="text" />
-
-
-            <div>
-
-
-              <button>Voltar</button>
-
-              <button type="submit">Enviar</button>
-            </div>
-          </form>
-        )}
-      />
-
+       initialValues={{
+         email: '',
+         firstName: '',
+         lastName: '',
+       }}
+       onSubmit={(values) => {
+        api.post('/pessoas', values).then((response)=>(
+          setList(response)
+        ))
+       }}
+     >
+       {() => (
+         <Form>
+           <Field name="firstName" type="text" label="First Name" />
+           <Field name="lastName" type="text" label="Last Name" />
+           <Field name="email" type="text" label="Email" />
+           <button type="submit">Submit</button>
+         </Form>
+       )}
+     </Formik>
+     <div>
+       {list.map((pessoa, index)=>{
+         return(
+           <div>
+            <h1>{pessoa.firstName}</h1>
+            <h1>{pessoa.lastName}</h1>
+            <h1>{pessoa.email}</h1>
+            <h1>{pessoa.id}</h1>
+            <button onClick={() => deletar(pessoa)}>Delete</button>
+            <button onClick={()=> setIsEdit(true)}>Edit</button>
+            {isEdit ? (<div> <input onChange={handleChange} value={inputValue}/> <button onClick={() => handleEdit(index)}>Salvar</button> </div>):'' }
+           </div>
+         )
+       })}
+      
+     </div>
+      
     </div>
   );
 }
